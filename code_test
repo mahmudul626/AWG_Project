@@ -1,51 +1,43 @@
-// #include <LiquidCrystal_I2C.h>
-// #include <Wire.h>
-// #include "DHT.h"
+#include "DHT.h"
 
-// LiquidCrystal_I2C lcd (0x27, 16, 2);
-#define DHTPIN 3
-#define DHTTYPE DHT11
-//DHT dht(DHTPIN, DHTTYPE);
-#define WATER_SENSOR_PIN A0 
-int AWG = 13;
-//unsigned long runTime = 600000;
-//unsigned long startTime;
-//bool awgOn = false;
+DHT dht(2, DHT11);
+int waterSensor = A0;
+int AWG = 12;
 
 void setup() {
   pinMode(AWG, OUTPUT);
-  //lcd.init();
-  //lcd.backlight();
-//  dht.begin();
+  Serial.begin(9600);
+  dht.begin();
 }
 
 void loop() {
-  float temp = 30;//dht.readTemperature();
-  float hum = 70;// dht.readHumidity();
- // int sensorValue = analogRead(WATER_SENSOR_PIN);
-  int waterPercent = 91;// map(sensorValue, 0, 1023, 0, 100);
+  float Humidity = dht.readHumidity();
+  float Temp = dht.readTemperature();
 
-/*  if ( temp >= 28 && hum >= 65 && awgOn == false) {
-    awgOn = true;
-    digitalWrite(AWG, HIGH);
-    startTime = millis();
-}
-
-if (awgOn && millis() - startTime >= runTime) {
-    digitalWrite(AWG, LOW);
-    delay(60000);
-    digitalWrite(AWG, HIGH);
-    startTime = millis();   
-}
-
-if (waterPercent >= 90) {
-    digitalWrite(AWG, LOW);
-    awgOn = false;
-} */
-  if(temp >= 28 && hum >= 65 && waterPercent <= 90) {
-    digitalWrite(AWG, HIGH);
-  } else{ 
-    digitalWrite(AWG, LOW);
+  if (isnan(Humidity) || isnan(Temp)) {
+    Serial.println("Sensor Reading Error");
+  } else {
+    Serial.print("Humidity: ");
+    Serial.print(Humidity);
+    Serial.print("%, Temp: ");
+    Serial.print(Temp);
+    Serial.println(" C");
   }
 
+  int value = analogRead(waterSensor);
+  int percent = map(value, 0, 1023, 0, 100);
+  Serial.print("Water Level: ");
+  Serial.print(percent);
+  Serial.println("%");
+
+  if (Temp >= 30 && Humidity >= 65 && percent <= 90) {
+    Serial.println("AWG: ON");
+    digitalWrite(AWG, HIGH);
+  } else {
+    Serial.println("AWG: OFF");
+    digitalWrite(AWG, LOW);
+  }
+  
+  Serial.println("----------------------");
+  delay(2000);
 }
