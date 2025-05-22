@@ -2,45 +2,56 @@
 #include <Wire.h>
 #include "DHT.h"
 
-LiquidCrystal_I2C lcd (0x27, 16, 2);
-#define DHTPIN 3
+#define DHTPIN 2
 #define DHTTYPE DHT11
+#define WATER_SENSOR A0
+#define AWG 12 
+
 DHT dht(DHTPIN, DHTTYPE);
-#define WATER_SENSOR_PIN A0 
-int AWG = 13;
-unsigned long runTime = 600000;
-unsigned long startTime;
-bool awgOn = false;
+LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 void setup() {
   pinMode(AWG, OUTPUT);
+  digitalWrite(AWG, LOW);
+  Serial.begin(9600);
+  dht.begin();
   lcd.init();
   lcd.backlight();
-  dht.begin();
 }
 
 void loop() {
+  float humidity = dht.readHumidity();
   float temp = dht.readTemperature();
-  float hum = dht.readHumidity();
-  int sensorValue = analogRead(WATER_SENSOR_PIN);
-  int waterPercent = map(sensorValue, 0, 1023, 0, 100);
+  int value = analogRead(WATER_SENSOR);
+  int moisturePercent = map(value, 0, 1023, 0, 100);
 
-  if (waterPercent < 30 && temp >= 28 && hum >= 65 && awgOn == false) {
-    awgOn = true;
+  if (isnan(humidity) || isnan(temp)) {
+    lcd.clear();
+    lcd.setCursor(0, 0);
+    lcd.print("Sensor Error!");
+    delay(2000);
+    return;
+  }
+
+  lcd.clear();
+  lcd.setCursor(0, 0);
+  lcd.print("T: ");
+  lcd.print(temp);
+  lcd.print("C H:");
+  lcd.print(humidity);
+  lcd.print("%");
+
+  lcd.setCursor(0, 1);
+  lcd.print("Water: ");
+  lcd.print(moisturePercent);
+  lcd.print("%");
+
+  // Control logic
+  if (temp >= 30 && humidity >= 65 && moisturePercent <= 90) {
     digitalWrite(AWG, HIGH);
-    startTime = millis();
-}
-
-if (awgOn && millis() - startTime >= runTime) {
+  } else {
     digitalWrite(AWG, LOW);
-    delay(60000);
-    digitalWrite(AWG, HIGH);
-    startTime = millis();   
-}
+  }
 
-if (waterPercent >= 90) {
-    digitalWrite(AWG, LOW);
-    awgOn = false;
-}
-
+  delay(2000);
 }
