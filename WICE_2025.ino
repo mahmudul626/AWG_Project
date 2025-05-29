@@ -28,9 +28,9 @@ void setup() {
 void loop() {
   int ir_value = digitalRead(ir);
   if(ir_value == HIGH) {
-    digitalWrite(pump, HIGH);
-  } else {
     digitalWrite(pump, LOW);
+  } else {
+    digitalWrite(pump, HIGH);
   }
   float humidity = dht.readHumidity();
   float temp = dht.readTemperature();
@@ -58,13 +58,13 @@ void loop() {
   lcd.print(moisturePercent);
   lcd.print("%");
 
-  // Control logic
+  // Update Control logic
   if (temp >= 30 && humidity >= 65 && moisturePercent <= 90) {
     digitalWrite(AWG, HIGH);
-    if(moisturePercent == 0) {
-      digitalWrite(uv_led, LOW);
-    } else {
+    if(moisturePercent > 5) {
       digitalWrite(uv_led, HIGH);
+    } else {
+      digitalWrite(uv_led, LOW);
     }
   } else {
     digitalWrite(AWG, LOW);
